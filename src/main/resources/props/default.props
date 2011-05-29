@@ -1,0 +1,4 @@
+db.driver=com.mysql.jdbc.Driver
+db.url=jdbc:mysql://localhost/bracelet_stats
+db.user=bracelet_stats
+db.password=Mp,89c*Q
