@@ -1,17 +1,8 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-				<head><meta content="text/html; charset=UTF-8" http-equiv="content-type" /><title>Sikker/Domozen Administration</title></head>
+<lift:surround with="structure">
 
-	<!-- First node to be processed will be main -->
-	<body class="lift:content_id=main">
-		<div id="main">
-		<p>
-			<div class="lift:Menu.builder"/>
-			<span class="lift:Main.about"></span>
-		</p>
-		<div id="notices" class="lift:surround?with=notices;at=content"></div>
-		<div class="lift:surround?with=default;at=content"></div>
-		</div>
-	</body>
-</html>
+  <lift:bind-at name="content">
+		This application has been created for PJL380 module, TELECOM ParisTech.
+	</lift:bind-at>
+
+</lift:surround>
 

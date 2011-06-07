@@ -1,0 +1,25 @@
+#lift__noticesContainer___notice {
+	color: green;
+}
+#lift__noticesContainer___warning {
+	color: yellow;
+}
+#lift__noticesContainer___error {
+	color: red;
+}
+
+body {
+	margin-left: auto;
+	margin-right: auto;
+	width: 950px;
+}
+
+#menu ul li {
+	list-style: none;
+}
+
+#debug ul li {
+	list-style: none;
+}
+
+
