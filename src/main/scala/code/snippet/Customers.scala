@@ -1,13 +1,12 @@
 package code.snippet
 
-
-
 import net.liftweb._
 import http._
 import util._
-import http._
+import common._
 import Helpers._
-
+import http._
+import dispatch.{Http, StatusCode}
 import js.JsCmds._
 import js.jquery._
 
@@ -15,38 +14,66 @@ import code.model._
 
 import scala.xml.{NodeSeq, Text}
 import json._
-import JsonDSL._
 import record.field.{IntField, StringField}
 
-// guid is a way to attest uniqueness of this line's DIV in the current lift session. It's a RENDERING-oriented field.
-// uuid is the CouchDB's uuid value of the newly created customer.
-case class Line(guid: String, uuid: String, first_name: String, last_name: String, state: String, bracelets: Int)
+class Customers extends Logger{
+  import couchdb._
+  import DocumentHelpers.jobjectToJObjectExtension
 
-class Customers {
 
-  private object Data {
+  // Just a helper class to help me get the fields I need
+  private object JObjectFieldHelper {
+    import couchdb.DocumentHelpers.JObjectExtension
 
-    //val customers = Customer.all(_.limit(3)).map(_.toList)
-    val customers = Customer.queryView(CustomerUtils.db_designName, "informations",_.descending)
-    
-    val total_customers = ValueCell(customers.open_!.length)
-    //val total_bracelets = TODO: list bracelets from database
+    implicit def toFieldHelper(obj: JObject): JObjectFieldHelper_Internal = new JObjectFieldHelper_Internal(obj)
+    class JObjectFieldHelper_Internal(obj: JObject) {
+      def field(name: String): String = obj.getString(name) open_!
+    }
   }
 
-  //def total_bracelets(in: NodeSeq) = WiringUI.asText(in, Data.total_bracelets, JqWiringSupport.fade)
-
-  def total_customers(in: NodeSeq) = WiringUI.asText(in, Data.total_customers, JqWiringSupport.slideDown)
-
-
-  // Functions to render list of customers: highly inspired by simply liftweb example for wiring.
-  def showLines = "* *" #> Data.customers.open_!.flatMap(u => <tr>{CustomerUtils.pretty(u)}</tr>)
-  //def showLines = "* *" #> Data.customers.open_!.flatMap(u => <tr>{u.toXHtml}</tr>)
 
 
 
+  private object Data {
+    import CustomerUtils._
 
-    private def getNewUuid = CouchUtils.generate_uuid
+    def customers = {
+      val (http, db) = init
 
+      val Full(record) = http(db design(db_designName) view("informations") query) 
+
+      record.rows.flatMap(_.value.asA[JObject]).toList
+    }
+    
+    val total_customers = ValueCell(customers.length toString)
+  }
+
+
+
+
+  def totalCustomers(in: NodeSeq) = WiringUI.asText(in, Data.total_customers, JqWiringSupport.slideDown)
+
+
+  def addCustomer(in: NodeSeq) = <span>[Button to add a user]</span>
+
+
+  def showLines = {
+    import JObjectFieldHelper.toFieldHelper
+
+    S.notice(Data.total_customers.get + " customers were found in the CouchDB database.")
+
+    // Data.customers.foreach{ r: JObject => S.notice(Printer.pretty(render(r))) }
+
+    val alternate =  for(i <- List.range(0,Data.customers.length))  yield if(i % 2 == 0) "tr0" else "tr1"
+
+    "* *" #> (
+      for((c, _class) <- Data.customers zip alternate) 
+        yield  <tr class={_class + " span-12 last"}>
+          <td class="span-4">{c.field("FirstName")}</td>
+          <td class="span-4">{c.field("LastName")}</td>
+          <td class="span-4"><i>{c.field("State")}</i></td></tr>
+    )
+  }
 
 }
 

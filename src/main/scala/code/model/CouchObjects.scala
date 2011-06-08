@@ -8,7 +8,7 @@ import common._
 import mapper._
 import json._
 import JsonDSL._
-import dispatch.{Http, StatusCode}
+import dispatch.{Http, Request, StatusCode}
 import record.field.{IntField, StringField, DateTimeField}
 import DocumentHelpers.stripIdAndRev
 
@@ -72,53 +72,50 @@ curl -X GET http://127.0.0.1:5984/_uuids
 */
 object CustomerUtils extends Logger {
 
-  val db_name = "customers"
+  private val db_name = "customers"
+
   val db_designName = "first_design"
 
   private var db_design : JObject = 
   ("language" -> "javascript") ~
-  ("views" -> (("informations" ->  ("map" -> """function(doc) { if (doc.type == 'Customer') { 
-      emit(null, {FirstName: doc.first_name, LastName: doc.last_name}); } }""" )) ~
-    ("foo"        -> (("map" -> "function(doc) { if (doc.type == 'Customer') { emit(doc.name, doc.age); } }") ~
-    ("reduce" -> "function(keys, values) { return Math.max.apply(null, values); }")))))
+  ("views" -> (
+    ("informations" ->  
+      ("map" -> """function(doc) { if (doc.type == 'Customer') { 
+      emit(doc.info, {FirstName: doc.first_name, LastName: doc.last_name, State: doc.info}); } }""" )) ~
+    ("paid"        -> (
+      ("map" -> """function(doc) { if (doc.type == 'Customer' && doc.info == 'paid') { 
+        emit(doc.id, {FirstName: doc.first_name, LastName: doc.last_name}); } }""")))))
 
-  def init = {
-    val (http, db) = CouchUtils.setup("customers");
 
-    val design_rev = try { http(db.design(db_designName) fetch) \ "_rev" }
+  def init(update_? : Boolean) : (Http, Database) = {
+    val (http, db) = CouchUtils.setup(db_name)
+    if(update_?) {
+      val design_rev = getRevision(db design(db_designName)) 
+      val updated_design = db_design ~ ("_rev" -> compact(render(design_rev)).dropRight(1).drop(1))
+      // Update view using correct revision number
+      debug(Printer.pretty(render(updated_design)))
+      try { http(db.design(db_designName) put updated_design) } catch { 
+        case StatusCode(409, _) => 
+        debug("CouchDB: Update Design : Revision numbers did not match")
+        case e => debug(e);
+      }
+    }
+    CouchDB.defaultDatabase = db
+    (http, db)
+  }
+
+  def init : (Http, Database) = init(false)
+
+  def getRevision(req : FetchableAsJObject) = {
+    val (http, db) = CouchUtils.setup(db_name);
+    try { http(req fetch) \ "_rev" }
     catch { 
       case StatusCode(404, _) => debug("CouchDB: design "+db_designName+" does not exist for database "+db_name); new JString("");
     }
+  }
 
-    debug(compact(render(design_rev)))
+  def pretty_print(c : Customer) = Printer.pretty(render(stripIdAndRev(c asJValue)))
 
-    db_design ~= ("_rev" -> compact(render(design_rev)).dropRight(1).drop(1))
-
-    debug(Printer.pretty(render(db_design)))
-
-    try { 
-      http(db.design(db_designName) put db_design)
-    } catch { 
-
-      case StatusCode(409, _) => 
-      debug("CouchDB: Update Design : Revision numbers did not match")
-
-      case e => debug(e);
-    }
-
-  CouchDB.defaultDatabase = db
-
-  (http, db)
-}
-
-
-def pretty(c : Customer) = compact(render(stripIdAndRev(c asJValue)))
-
-
-  def testRec1: Customer = {
-  val id = CouchUtils.generate_uuid
-  Customer.createRecord.first_name("Alice").last_name("Bobby").info("foo").bracelet_id(id)
-}
 }
 
 

@@ -23,3 +23,12 @@ body {
 }
 
 
+tr.tr0 td {
+	background-color: #FCF6CF;
+}
+
+tr.tr1 td {
+	background-color: #FEFEF2;
+}
+	
+
