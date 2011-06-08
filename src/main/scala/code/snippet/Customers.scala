@@ -26,7 +26,8 @@ class Customers {
 
   private object Data {
 
-    val customers = Customer.all(_.key(JInt(30))).map(_.toList)
+    //val customers = Customer.all(_.limit(3)).map(_.toList)
+    val customers = Customer.queryView(CustomerUtils.db_designName, "informations",_.descending)
     
     val total_customers = ValueCell(customers.open_!.length)
     //val total_bracelets = TODO: list bracelets from database
@@ -38,7 +39,8 @@ class Customers {
 
 
   // Functions to render list of customers: highly inspired by simply liftweb example for wiring.
-  def showLines = "* *" #> Data.customers.open_!.flatMap(u => <tr>{u.toXHtml}</tr>)
+  def showLines = "* *" #> Data.customers.open_!.flatMap(u => <tr>{CustomerUtils.pretty(u)}</tr>)
+  //def showLines = "* *" #> Data.customers.open_!.flatMap(u => <tr>{u.toXHtml}</tr>)
 
 
 

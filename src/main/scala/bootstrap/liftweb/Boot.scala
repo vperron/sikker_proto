@@ -75,20 +75,8 @@ class Boot extends Logger {
 
 
     //sets the default database for the application
-    val (http, db) = CouchUtils.setup("customers")
-    CouchDB.defaultDatabase = db
+    val (http, db) = CustomerUtils.init
 
     debug(http(db info))
-
-    def testRec1: Customer = {
-      val id = CouchUtils.generate_uuid
-      Customer.createRecord.first_name("Alice").last_name("Bobby").info("foo").bracelet_id(id)
-    }
-
-    val newCustomer = testRec1
-
-    debug(newCustomer toXHtml)
-    newCustomer.save
-
   }
 }
