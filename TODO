@@ -1,0 +1,9 @@
+TODO LIST for PJL380
+
+- Web interface to add/edit/remove users
+- Connect couchDB and mysql to get bracelet informations live
+    * At least a table with last information update
+		* At best, graphs
+- a "bracelet" should be able to connect to REST and
+    * send its own data
+		* retrieve status or old data
