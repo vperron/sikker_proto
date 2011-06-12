@@ -53,6 +53,7 @@ class Boot extends Logger {
     val entries = List(
       Menu.i("Index") / "index",
       Menu.i("Manage") / "manage" / "index",
+        Menu.i("Edit Customer") / "manage" / "edit" >> Hidden,
       Menu.i("About") / "about")
 
     // set the sitemap.  Note if you don't want access control for

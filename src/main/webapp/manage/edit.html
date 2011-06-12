@@ -1,7 +1,8 @@
-<lift:surround with="default" at="content">
-  <table>
-    <tr class="lift:misc.edit?form=post">
-      <td>foo</td>
-    </tr>
-  </table>
+<lift:surround with="structure">
+
+  <lift:bind-at name="content">
+	<div class="lift:EditCustomer"></div>
+	</lift:bind-at>
+
 </lift:surround>
+
