@@ -34,12 +34,17 @@ private object CustomerFieldHelper {
     def category : String = obj.field("info");
     def braceletid : String = obj.field("bracelet_id");
 
-
+    def hasString(s : String) : Boolean = {
+          (obj.lastname.toLowerCase.indexOf(s) != -1) ||
+          (obj.firstname.toLowerCase.indexOf(s) != -1) ||
+          (obj.category.toLowerCase.indexOf(s) != -1)
+    }
   }
 }
 
 
 class Customers extends Logger{
+
   import CustomerFieldHelper.toFieldHelper
 
 
@@ -48,20 +53,96 @@ class Customers extends Logger{
 
     val (http, db) = init
 
-    def customers = (Customer.all(_.limit(11)) open_!) toList
+    private def max_customers = (Customer.all(identity)).open_! length
+
+    private def checkLimits {
+      val max = max_customers
+      if(begin.get < 0) begin.set(0)
+      if(end.get > max) end.set(max)
+
+      page.set(begin.get/range + 1)
+    }
+
+    val range = 5
+    private val begin = ValueCell(0)
+    private val end = ValueCell(range)
+    val filter = ValueCell("")
+    val page = ValueCell(1)
+    val totalpages = ValueCell(max_customers / range + 1)
+
+    def customers = {
+
+      checkLimits
+
+      val s = filter.get.toLowerCase.trim
+
+      if(s == "") { 
+        val allcustomers = (Customer.all(identity) open_!) toList;
+        CustomerUtils.error("Begin = "+begin.get+" End = "+end.get)
+        for(i <- List.range(begin get,end get))  yield allcustomers apply(i)
+      }
+      else ((Customer.all(identity) open_!) toList).filter ( _.hasString(s) )
+    }
     
-    val total_customers = ValueCell( (Customer.all(identity).open_! length) toString )
+
+    val total_customers =  <b>{max_customers toString }</b>
+
+
+    def shiftLeft = {
+      import scala.math._
+      begin.set(max(begin.get - range, 0))
+      end.set(begin.get + range)
+    }
+
+    def shiftRight = {
+      import scala.math._
+      val max = max_customers
+      if(begin.get + range < max) {
+        begin.set(begin.get + range)
+        end.set(min(begin.get + range, max))
+      }
+    }
 
   }
 
 
+  def shiftLeft(in: NodeSeq) = {
+    SHtml.onEvents("onclick")(s => {
+      Data.shiftLeft
+      SetHtml("customer_lines", showLines)
+    })(in)
+  }
+
+  def shiftRight(in: NodeSeq) = {
+    SHtml.onEvents("onclick")(s => {
+      Data.shiftRight
+      SetHtml("customer_lines", showLines)
+    })(in)
+  }
+
+  def follow(ns : NodeSeq) = {
+    <i>{WiringUI.asText(Data.page)(ns)} / {WiringUI.asText(Data.totalpages)(ns)}</i>
+
+  }
 
 
-  def totalCustomers(in: NodeSeq) = WiringUI.asText(in, Data.total_customers, JqWiringSupport.slideDown)
+  def totalCustomers(in: NodeSeq) = Data.total_customers
 
 
   def addCustomer(in: NodeSeq) = 
     <span class="span-4">{SHtml.link("/manage/edit", () => EditCustomer.selectedCustomer(Empty), Text("Add a customer"))}</span>
+
+
+  def filterCustomers(s: String) : JsCmd = {
+    Data.filter.set(s)
+    SetHtml("customer_lines", showLines)
+  }
+
+  def lookForCustomer(in: NodeSeq) = {
+    import http.js.JE
+    val (name, js) = SHtml.ajaxCall(JE.JsRaw("this.value"), s => filterCustomers(s))
+    SHtml.ajaxText("", s => filterCustomers(s), "onkeyup" -> js.toJsCmd);
+  }
 
 
   def removeCustomer(cBox : Box[Customer]) : JsCmd  = {
@@ -72,7 +153,7 @@ class Customers extends Logger{
 
     if(c canDelete_?) {
       c delete_! ;
-      S.notice("Customer "+c.field("last_name")+" "+c.field("first_name")+" has been deleted.") 
+      S.notice("Customer "+c.firstname+" "+c.lastname+" has been deleted.") 
     } 
     Noop
   }
@@ -89,15 +170,11 @@ class Customers extends Logger{
 
   def showLines : NodeSeq = {
 
-    // Don't reload the database every time
     val customers = Data.customers
-
-    S.notice(Data.total_customers.get + " customers were found in the CouchDB database.")
 
     val alternate =  for(i <- List.range(0,customers.length))  yield if(i % 2 == 0) "tr0" else "tr1"
 
-    for((c, _class) <- customers zip alternate) 
-      yield htmlLine(c, _class)
+    for((c, _class) <- customers zip alternate) yield htmlLine(c, _class)
 
   }
 

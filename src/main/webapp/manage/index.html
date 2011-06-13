@@ -1,13 +1,23 @@
 <lift:surround with="structure">
 
   <lift:bind-at name="content">
-	<h2>Current customers :</h2>
+	<div id="title" class="span-20 last">
+		<span class="span-12"><h2>Current customers :</h2></span>
+		<span id="lookfor" style="float: right" class="lift:Customers.lookForCustomer?div=customer_lines span-8 last" ></span>
+	</div>
 
-  <div id="customer_lines" class="lift:Customers.showLines span-20 last">input goes here</div>
+	<div id="customer_lines" class="span-20 last">
+		<span class="lift:Customers.showLines" > </span>
+	</div>
 
-  <div class="lift:Customers.addCustomer?div=customer_lines span-4">Add Customer</div>
+  <div class="lift:Customers.addCustomer span-4">Add Customer</div>
+  <a style="text-align: center;" class="lift:Customers.shiftLeft span-2">&lt;</a>
+	<div style="text-align: center;" class="span-4"> 
+		<span class="lift:Customers.follow"></span>
+	</div>
+  <a style="text-align: center;" class="lift:Customers.shiftRight span-2">&gt;</a>
 
-  <div>Total : <span class="lift:Customers.totalCustomers">Total number</span></div>
+  <div class="span-4 last">Total : <span class="lift:Customers.totalCustomers"></span></div>
 
 	</lift:bind-at>
 
