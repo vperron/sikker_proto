@@ -1,9 +1,26 @@
-TODO LIST for PJL380
+/*****************************************************************************/
+													TODO LIST for PJL380
+/*****************************************************************************/
 
-- Web interface to add/edit/remove users
+
+
+DONE
+====
+OK : - First version of REST interface
+OK : - CouchDB and MySQL Models for persistence, working
+OK : - Lift Web interface to add/edit/view/remove users
+
+
+MAJOR FEATURES
+==============
 - Connect couchDB and mysql to get bracelet informations live
     * At least a table with last information update
 		* At best, graphs
-- a "bracelet" should be able to connect to REST and
-    * send its own data
-		* retrieve status or old data
+- Improve REST interface and create a bracelet program that will connect
+
+
+MINOR FEATURES
+==============
+- Still minor bugs in page count when filter is on
+- Maybe better if we had a per-column sorting feature for users
+- Could be nice to try ScalaCheck features on some parts
