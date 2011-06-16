@@ -17,30 +17,6 @@ import scala.xml.{NodeSeq, Text}
 import json._
 //import record.field.{IntField, StringField}
 
-// Just a helper class to help me get the fields I need
-private object CustomerFieldHelper {
-  import couchdb._
-  import DocumentHelpers.jobjectToJObjectExtension
-  import couchdb.DocumentHelpers.JObjectExtension
-
-  implicit def toFieldHelper(obj: Customer): CustomerFieldHelper_Internal = new CustomerFieldHelper_Internal(obj)
-  
-  class CustomerFieldHelper_Internal(obj: Customer) {
-
-    def field(name: String): String = obj.asJValue.getString(name) open_!
-
-    def firstname : String = obj.field("first_name");
-    def lastname : String = obj.field("last_name");
-    def category : String = obj.field("info");
-    def braceletid : String = obj.field("bracelet_id");
-
-    def hasString(s : String) : Boolean = {
-          (obj.lastname.toLowerCase.indexOf(s) != -1) ||
-          (obj.firstname.toLowerCase.indexOf(s) != -1) ||
-          (obj.category.toLowerCase.indexOf(s) != -1)
-    }
-  }
-}
 
 
 class Customers extends Logger{
@@ -49,9 +25,6 @@ class Customers extends Logger{
 
 
    private object Data {
-    import CustomerUtils._
-
-    val (http, db) = init
 
     private def max_customers = (Customer.all(identity)).open_! length
 

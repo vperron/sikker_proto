@@ -64,6 +64,30 @@ object CouchUtils extends Logger {
 }
 
 
+// Just a helper class to help me get the fields I need
+object CustomerFieldHelper {
+  import couchdb._
+  import DocumentHelpers.jobjectToJObjectExtension
+  import couchdb.DocumentHelpers.JObjectExtension
+
+  implicit def toFieldHelper(obj: Customer): CustomerFieldHelper_Internal = new CustomerFieldHelper_Internal(obj)
+  
+  class CustomerFieldHelper_Internal(obj: Customer) {
+
+    def field(name: String): String = obj.asJValue.getString(name) open_!
+
+    def firstname : String = obj.field("first_name");
+    def lastname : String = obj.field("last_name");
+    def category : String = obj.field("info");
+    def braceletid : String = obj.field("bracelet_id");
+
+    def hasString(s : String) : Boolean = {
+          (obj.lastname.toLowerCase.indexOf(s) != -1) ||
+          (obj.firstname.toLowerCase.indexOf(s) != -1) ||
+          (obj.category.toLowerCase.indexOf(s) != -1)
+    }
+  }
+}
 
 /*
 Each bracelet has an unique ID that will track MySQL records for stats.
@@ -82,12 +106,12 @@ object CustomerUtils extends Logger {
     ("informations" ->  
       ("map" -> """function(doc) { if (doc.type == 'Customer') { 
       emit(doc.info, {FirstName: doc.first_name, LastName: doc.last_name, State: doc.info}); } }""" )) ~
-    ("paid"        -> (
-      ("map" -> """function(doc) { if (doc.type == 'Customer' && doc.info == 'paid') { 
-        emit(doc.id, {FirstName: doc.first_name, LastName: doc.last_name}); } }""")))))
+    ("bracelets"  -> (
+      ("map" -> """function(doc) { if (doc.type == 'Customer') { 
+        emit(doc.bracelet_id, {CustomerId: doc._id, BraceletId: doc.bracelet_id}); } }""")))))
 
 
-  def init(update_? : Boolean) : (Http, Database) = {
+  def init(update_? : Boolean = false) : (Http, Database) = {
     val (http, db) = CouchUtils.setup(db_name)
     if(update_?) {
       val design_rev = getRevision(db design(db_designName)) 
