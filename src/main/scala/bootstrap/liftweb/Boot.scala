@@ -54,6 +54,7 @@ class Boot extends Logger {
       Menu.i("Index") / "index",
       Menu.i("Manage") / "manage" / "index",
         Menu.i("Edit Customer") / "manage" / "edit" >> Hidden,
+        Menu.i("Customer Stats") / "manage" / "stats" >> Hidden,
       Menu.i("About") / "about")
 
     // set the sitemap.  Note if you don't want access control for

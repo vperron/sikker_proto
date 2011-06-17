@@ -10,13 +10,13 @@ OK : - First version of REST interface
 OK : - CouchDB and MySQL Models for persistence, working
 OK : - Lift Web interface to add/edit/view/remove users
 OK : - Improve REST interface and create a bracelet program that will connect
+OK : - Connect couchDB and mysql to get bracelet informations live
+       * At least a table with last information update
+		   * At best, graphs
 
 
 MAJOR FEATURES
 ==============
-- Connect couchDB and mysql to get bracelet informations live
-    * At least a table with last information update
-		* At best, graphs
 
 
 MINOR FEATURES
@@ -24,3 +24,6 @@ MINOR FEATURES
 - Still minor bugs in page count when filter is on
 - Maybe better if we had a per-column sorting feature for users
 - Could be nice to try ScalaCheck features on some parts
+- Improve performance to have less couchDB calls on user list
+- Graph isn't yet properly drawn, scale is bad and does not render
+  actual user values

@@ -1,0 +1,31 @@
+<lift:surround with="structure">
+
+  <lift:bind-at name="content">
+	<div id="title" class="span-20 last">
+		<h2>Stats for customer : <span id="customer_name" class="lift:CustomerStats.makeTitle" ></span></h2>
+	</div>
+
+
+	<div id="customer_stats" class="span-20 last">
+		<span style="width:600px;height:400px;" id="graph_area" ></span>
+	</div>
+
+		<span class="lift:CustomerStats.showLines" > </span>
+
+	<div id="last_line">
+		<span class="lift:CustomerStats.backButton span-4"></span>
+		<a style="text-align: center;" class="lift:CustomerStats.shiftLeft span-2">&lt;</a>
+
+		<div style="text-align: center;" class="span-4"> 
+			<span class="lift:CustomerStats.follow"></span>
+		</div>
+
+		<a style="text-align: center;" class="lift:CustomerStats.shiftRight span-2">&gt;</a>
+		<div style="text-align: right" ><span class="lift:CustomerStats.switchButton span-4 last"></span></div>
+	</div>
+
+
+	</lift:bind-at>
+
+</lift:surround>
+

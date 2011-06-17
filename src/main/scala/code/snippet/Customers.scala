@@ -15,9 +15,10 @@ import code.model._
 
 import scala.xml.{NodeSeq, Text}
 import json._
-//import record.field.{IntField, StringField}
 
 
+// RequestVar to retain selected user for the edition form
+object selectedCustomer extends SessionVar[Box[Customer]](Empty)
 
 class Customers extends Logger{
 
@@ -51,7 +52,7 @@ class Customers extends Logger{
 
       if(s == "") { 
         val allcustomers = (Customer.all(identity) open_!) toList;
-        CustomerUtils.error("Begin = "+begin.get+" End = "+end.get)
+        CustomerUtils.debug("Begin = "+begin.get+" End = "+end.get)
         for(i <- List.range(begin get,end get))  yield allcustomers apply(i)
       }
       else ((Customer.all(identity) open_!) toList).filter ( _.hasString(s) )
@@ -103,7 +104,7 @@ class Customers extends Logger{
 
 
   def addCustomer(in: NodeSeq) = 
-    <span class="span-4">{SHtml.link("/manage/edit", () => EditCustomer.selectedCustomer(Empty), Text("Add a customer"))}</span>
+    <span class="span-4">{SHtml.link("/manage/edit", () => selectedCustomer(Empty), Text("Add a customer"))}</span>
 
 
   def filterCustomers(s: String) : JsCmd = {
@@ -137,8 +138,9 @@ class Customers extends Logger{
           <td class="span-4" >{c.field("first_name")}</td>
           <td class="span-4" >{c.field("last_name")}</td>
           <td class="span-4"><i>{c.field("info")}</i></td>
-          <td class="span-2">{SHtml.link("/manage/edit", () => EditCustomer.selectedCustomer(Full(c)), Text("Edit"))}</td>
-          <td class="span-2 last">{SHtml.link("/manage/index", () => removeCustomer(Full(c)), Text("Remove")) }</td></tr>
+          <td class="span-2">{SHtml.link("/manage/stats", () => selectedCustomer(Full(c)), Text("Stats"))}</td>
+          <td class="span-2">{SHtml.link("/manage/edit", () => selectedCustomer(Full(c)), Text("Edit"))}</td>
+          <td class="span-2 last">{ SHtml.link("/manage/index", () => removeCustomer(Full(c)), Text("Remove")) }</td></tr>
   }
 
   def showLines : NodeSeq = {
@@ -156,8 +158,6 @@ class Customers extends Logger{
 object EditCustomer extends LiftScreen {
   import CustomerFieldHelper.toFieldHelper
   
-  // RequestVar to retain selected user for the edition form
-  object selectedCustomer extends SessionVar[Box[Customer]](Empty)
 
   override def screenTop = {
     if( selectedCustomer.isEmpty ) <b>New customer</b>
@@ -173,7 +173,7 @@ object EditCustomer extends LiftScreen {
       override def default = selectedCustomer.map(_.firstname) openOr "";
 
       override def validations = valMinLen(1, "Too Short") _ ::
-          valMaxLen(40, "Name Too Long") _ :: super.validations
+          valMaxLen(40, "Too Long") _ :: super.validations
     }
 
   val last_name = 
