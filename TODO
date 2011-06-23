@@ -11,8 +11,8 @@ OK : - CouchDB and MySQL Models for persistence, working
 OK : - Lift Web interface to add/edit/view/remove users
 OK : - Improve REST interface and create a bracelet program that will connect
 OK : - Connect couchDB and mysql to get bracelet informations live
-       * At least a table with last information update
-		   * At best, graphs
+      (ok) * At least a table with last information update
+		  (ok) * At best, graphs
 
 
 MAJOR FEATURES
@@ -25,5 +25,4 @@ MINOR FEATURES
 - Maybe better if we had a per-column sorting feature for users
 - Could be nice to try ScalaCheck features on some parts
 - Improve performance to have less couchDB calls on user list
-- Graph isn't yet properly drawn, scale is bad and does not render
-  actual user values
+- Maybe we could improve a bit the way graphs are drawn

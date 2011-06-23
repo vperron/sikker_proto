@@ -115,7 +115,7 @@ class Customers extends Logger{
   def lookForCustomer(in: NodeSeq) = {
     import http.js.JE
     val (name, js) = SHtml.ajaxCall(JE.JsRaw("this.value"), s => filterCustomers(s))
-    SHtml.ajaxText("", s => filterCustomers(s), "onkeyup" -> js.toJsCmd);
+      <span>Search : {SHtml.ajaxText("", s => filterCustomers(s), "onkeyup" -> js.toJsCmd)}</span>
   }
 
 
@@ -126,6 +126,9 @@ class Customers extends Logger{
     val c = cBox open_!
 
     if(c canDelete_?) {
+      import mapper.By
+      
+      Stats.bulkDelete_!!(By(Stats.bracelet_id,c braceletid))
       c delete_! ;
       S.notice("Customer "+c.firstname+" "+c.lastname+" has been deleted.") 
     } 

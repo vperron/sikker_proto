@@ -22,9 +22,11 @@ class CustomerStats extends Logger {
   
   object graphMode extends SessionVar[Box[Boolean]](Full(true))
   object lineCount   extends RequestVar[Box[Long]](Full(countCustomers))
-  val currentOffset = ValueCell(0)
+  object currentOffset extends SessionVar[Box[Int]](Full(0))
+  val currentGraph = ValueCell("temperature")
   val range         = 5
-  val page          = currentOffset.lift(_ / range)
+  val graph_range   = 50
+  object currentRange extends SessionVar[Int](1)
 
 
 
@@ -37,35 +39,33 @@ class CustomerStats extends Logger {
     <span>{c.firstname + " " + c.lastname}</span>
   }
 
+  def chooseBox (in: NodeSeq) : NodeSeq = {
+    import http.js.JE
+
+    if(graphMode.open_!) {
+      val (name, js) = SHtml.ajaxCall(JE.JsRaw("this.value"), s => SetHtml("graph_area", drawChart(s)))
+
+      val selectValues = List( ("temperature", "Temperature"),
+                                ("cardio", "Cardiology"),
+                                ("accel", "Movements"),
+                                ("noise", "Noise"))
+
+      (SHtml.select(selectValues, Full(currentGraph get), s => drawChart(s), "onchange" -> js.toJsCmd))
+    } else Nil
+ 
+  }
+
   def showLines: NodeSeq = {
 
     if ( selectedCustomer isEmpty ) goBack 
 
-    val bracelet_id = (selectedCustomer open_!) braceletid
+    val isGraphMode_? = graphMode.open_!
 
-    val lines = Stats.findAll(By(Stats.bracelet_id, bracelet_id), 
-                              OrderBy(Stats.timestamp, Descending), 
-                              MaxRows(range),
-                              StartAt(currentOffset.get))
+    "#graph_area [style]" #> ("width:600px;height:400px;" + (if (!isGraphMode_?) "display:None;"))
 
-    val htmlLines = for (line <- lines) yield htmlLine(line)
+    if ( isGraphMode_? ) drawChart(currentGraph get)
+    else getLines
 
-
-    switchViewGraph
-
-    graphMode.open_! match {
-      case true => {
-        //"#graph_area *+" #> drawChart
-        //Nil
-        val data = drawChart
-        error(data toString)
-        data
-        // Il y a donc encore ce putain de probleme des echelles qui se baladent...
-      }
-      case _ => { 
-        titleLine ++ htmlLines
-      }
-    }
   }
 
 
@@ -77,31 +77,38 @@ class CustomerStats extends Logger {
     <span class="span-4">{SHtml.link("/manage/stats",() => switchMode, Text(getModeString))}</span>
   }
 
-  def shiftLeft(in: NodeSeq) = {
-    SHtml.onEvents("onclick")(s => { toLeft; SetHtml("customer_stats", showLines)  })(in)
+  def shiftLeft(in: NodeSeq) : NodeSeq = {
+    if(!graphMode.open_!) SHtml.onEvents("onclick")(s => { toLeft ; SetHtml("customer_stats", showLines) })(in)
+    else <span class="span-4">{SHtml.link("/manage/stats",() => currentRange atomicUpdate(v => if(v > 1)  v - 1 else v), Text("-"))}</span>
   }
 
-  def shiftRight(in: NodeSeq) = {
-    SHtml.onEvents("onclick")(s => { toRight; SetHtml("customer_stats", showLines)  })(in)
+  def shiftRight(in: NodeSeq) : NodeSeq = {
+    if(!graphMode.open_!) SHtml.onEvents("onclick")(s => { toRight ; SetHtml("customer_stats", showLines) })(in)
+    else <span class="span-4">{SHtml.link("/manage/stats",() => currentRange atomicUpdate(v => if(v < lineCount.open_!)  v + 1 else v), Text("+"))}</span>
   }
 
-  def follow(ns : NodeSeq) = {
-    <i>{WiringUI.asText(page)(ns)} / {lineCount.open_! / range}</i>
+  def follow(ns : NodeSeq) : NodeSeq = {
+    if(!graphMode.open_!)
+      <i>{currentOffset.open_! / range} / {lineCount.open_! / range}</i>
+    else Nil
   }
 
 
 
-  private def drawChart = {
-    val data_values: List[(Double,Double)] = for (i <- List.range (0, 140, 5))
-        yield (i / 10.0, math.sin(i / 10.0) ) 
+  private def drawChart(s : String) : NodeSeq = {
+
+    val bracelet_id = (selectedCustomer open_!) braceletid
+    val values = Stats.findAll(By(Stats.bracelet_id, bracelet_id), 
+                              OrderBy(Stats.timestamp, Descending), 
+                              MaxRows(currentRange.get * graph_range))
 
     val data_to_plot = new FlotSerie() {
-        override val data = data_values
-    } 
-
+      override val data = for ((i, stat) <- List.range(0, values.length) zip values) yield (i : Double , stat.fieldByName(s).open_!.get : Double)
+    }
 
     Flot.init
     Flot.render ( "graph_area", List(data_to_plot), new FlotOptions {}, Flot.script(Nil))
+
   }
 
 
@@ -111,9 +118,6 @@ class CustomerStats extends Logger {
   /*
   * PRIVATE FUNCTIONS HERE
   */
-  private def switchViewGraph {
-    "#graph_area [style]" #> ("width:600px;height:400px;" + (if(!graphMode.open_!) "display:None"))
-  }
 
   private def switchMode {
     val b = graphMode.open_! match  {
@@ -126,14 +130,14 @@ class CustomerStats extends Logger {
 
   private def toLeft = {
     import scala.math._
-    currentOffset.set(max(currentOffset.get - range, 0))
+    currentOffset(Full(max(currentOffset.open_! - range, 0)))
   }
 
   private def toRight = {
     import scala.math._
     val N = lineCount.open_!
-    if(currentOffset.get + range < N) {
-      currentOffset.set(currentOffset.get + range)
+    if(currentOffset.open_! + range < N) {
+      currentOffset(Full(currentOffset.open_! + range))
     }
   }
 
@@ -155,6 +159,17 @@ class CustomerStats extends Logger {
           <span class="span-2">dB</span>
           <hr />
           </div>
+  }
+
+  private def getLines : NodeSeq = {
+    val bracelet_id = (selectedCustomer open_!) braceletid
+
+    val lines = Stats.findAll(By(Stats.bracelet_id, bracelet_id), 
+                              OrderBy(Stats.timestamp, Descending), 
+                              MaxRows(range),
+                              StartAt(currentOffset.open_!))
+
+    titleLine ++ (for (line <- lines) yield htmlLine(line))
   }
 
   private def htmlLine(s : Stats) = {

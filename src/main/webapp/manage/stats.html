@@ -2,15 +2,16 @@
 
   <lift:bind-at name="content">
 	<div id="title" class="span-20 last">
-		<h2>Stats for customer : <span id="customer_name" class="lift:CustomerStats.makeTitle" ></span></h2>
+		<h2 class="span-16">Stats for customer : <span id="customer_name" class="lift:CustomerStats.makeTitle" ></span></h2>
+		<span style="float: right;" class="lift:CustomerStats.chooseBox" />
 	</div>
 
 
-	<div id="customer_stats" class="span-20 last">
-		<span style="width:600px;height:400px;" id="graph_area" ></span>
-	</div>
-
+	<div id="customer_stats" style="position: relative;" class="span-20 last">
+		<div style="display: None; width:600px;height:400px;" id="graph_area" ></div>
 		<span class="lift:CustomerStats.showLines" > </span>
+	</div>
+
 
 	<div id="last_line">
 		<span class="lift:CustomerStats.backButton span-4"></span>
@@ -21,7 +22,7 @@
 		</div>
 
 		<a style="text-align: center;" class="lift:CustomerStats.shiftRight span-2">&gt;</a>
-		<div style="text-align: right" ><span class="lift:CustomerStats.switchButton span-4 last"></span></div>
+		<div style="text-align: right; float: right;" ><span class="lift:CustomerStats.switchButton span-4 last"></span></div>
 	</div>
 
 

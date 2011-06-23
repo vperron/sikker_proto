@@ -55,36 +55,36 @@ class Stats extends KeyedMapper[Long, Stats] with Logger {
     override def dbNotNull_? = true
   }
 
-  object temperature extends MappedInt(this) with GenerateFieldError{
+  object temperature extends MappedDouble(this) with GenerateFieldError{
     override def dbIndexed_? = false
     override def dbColumnName = "temperature"
     override def required_? = true
     override def dbNotNull_? = true
-    override def defaultValue = -1 // Allegedly false
+    override def defaultValue = -1.0 // Allegedly false
     override def validate = if (get > 60 || get < 20) "Verification of element "+dbColumnName+" failed." else Nil
   }
-  object cardio extends MappedInt(this) with GenerateFieldError{
+  object cardio extends MappedDouble(this) with GenerateFieldError{
     override def dbIndexed_? = false
     override def dbColumnName = "cardio"
     override def required_? = true
     override def dbNotNull_? = true
-    override def defaultValue = -1 // Allegedly false
+    override def defaultValue = -1.0 // Allegedly false
     override def validate = if (get > 150 || get < 20) "Verification of element "+dbColumnName+" failed." else Nil
   }
-  object accel extends MappedInt(this) with GenerateFieldError{
+  object accel extends MappedDouble(this) with GenerateFieldError{
     override def dbIndexed_? = false
     override def dbColumnName = "accel"
     override def required_? = true
     override def dbNotNull_? = true
-    override def defaultValue = -1 // Allegedly false
+    override def defaultValue = -1.0 // Allegedly false
     override def validate = if (get > 10 || get < 0) "Verification of element "+dbColumnName+" failed." else Nil
   }
-  object noise extends MappedInt(this) with GenerateFieldError{
+  object noise extends MappedDouble(this) with GenerateFieldError{
     override def dbIndexed_? = false
     override def dbColumnName = "noise"
     override def required_? = true
     override def dbNotNull_? = true
-    override def defaultValue = -1 // Allegedly false
+    override def defaultValue = -1.0 // Allegedly false
     override def validate = if (get > 100 || get < 0) "Verification of element "+dbColumnName+" failed." else Nil
   }
 
