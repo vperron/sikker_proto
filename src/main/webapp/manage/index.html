@@ -13,15 +13,15 @@
 	<div id="last_line">
 		<div class="lift:Customers.addCustomer span-4">Add Customer</div>
 
-		<a style="text-align: center;" class="lift:Customers.shiftLeft span-2">&lt;</a>
+		<a style="text-align: center; cursor: pointer;" class="lift:Customers.shiftLeft span-2">&lt;</a>
 
-		<div style="text-align: center;" class="span-4"> 
+		<div id="pagecount" style="text-align: center;" class="span-4"> 
 			<span class="lift:Customers.follow"></span>
 		</div>
 
-		<a style="text-align: center;" class="lift:Customers.shiftRight span-2">&gt;</a>
+		<a style="text-align: center; cursor: pointer;" class="lift:Customers.shiftRight span-2">&gt;</a>
 
-		<div  style="text-align: right" class="span-4 last">Total : <span class="lift:Customers.totalCustomers"></span></div>
+		<div  style="text-align: right" class="span-4 last">Total : <span id="totalcount" class="lift:Customers.totalCustomers"></span></div>
 	</div>
 
 	</lift:bind-at>

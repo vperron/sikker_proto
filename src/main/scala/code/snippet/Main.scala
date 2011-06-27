@@ -29,7 +29,6 @@ class Main {
   val db = CouchDB.defaultDatabase
   var Full(uuid_info) = CouchDBConfig.fetchFrom(new Database("_config"), "uuids")
 
-  def uuid = "#algo_mark *" #> CouchUtils.algorithm
   def about = "* *" #> "This code has been adapted for PJL380, 2011 - (C) Victor Perron"
   
 

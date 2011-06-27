@@ -24,92 +24,67 @@ class Customers extends Logger{
 
   import CustomerFieldHelper.toFieldHelper
 
+  private val inc = 5
 
-   private object Data {
-
-    private def max_customers = (Customer.all(identity)).open_! length
-
-    private def checkLimits {
-      val max = max_customers
-      if(begin.get < 0) begin.set(0)
-      if(end.get > max) end.set(max)
-
-      page.set(begin.get/range + 1)
-    }
-
-    val range = 5
-    private val begin = ValueCell(0)
-    private val end = ValueCell(range)
-    val filter = ValueCell("")
-    val page = ValueCell(1)
-    val totalpages = ValueCell(max_customers / range + 1)
-
-    def customers = {
-
-      checkLimits
-
-      val s = filter.get.toLowerCase.trim
-
-      if(s == "") { 
-        val allcustomers = (Customer.all(identity) open_!) toList;
-        CustomerUtils.debug("Begin = "+begin.get+" End = "+end.get)
-        for(i <- List.range(begin get,end get))  yield allcustomers apply(i)
-      }
-      else ((Customer.all(identity) open_!) toList).filter ( _.hasString(s) )
-    }
-    
-
-    val total_customers =  <b>{max_customers toString }</b>
+  object filter extends SessionVar[String]("")
+  object range extends SessionVar[(Int, Int)]((0,inc))
+  object currentCustomers extends SessionVar[List[Customer]](Customer.all(identity).open_!.toList) 
 
 
-    def shiftLeft = {
-      import scala.math._
-      begin.set(max(begin.get - range, 0))
-      end.set(begin.get + range)
-    }
+  private def updateCount = SetHtml("pagecount", follow) & SetHtml("totalcount", <b>{customerCount}</b>)
 
-    def shiftRight = {
-      import scala.math._
-      val max = max_customers
-      if(begin.get + range < max) {
-        begin.set(begin.get + range)
-        end.set(min(begin.get + range, max))
-      }
-    }
+  // Caution : maybe the filter won't work anymore
+  private def getCustomers : List[Customer] = {
+    import scala.math._
 
+    val customers = currentCustomers.get.filter ( _.hasString(filter.get.toLowerCase.trim) )
+
+    for(i <- List.range(range.get._1, min(range.get._2, customers.length)))  yield customers.apply(i)
+  }
+
+  private def customerCount : Int = {
+    import scala.math._
+    currentCustomers.get.filter ( _.hasString(filter.get.toLowerCase.trim) ).length
   }
 
 
   def shiftLeft(in: NodeSeq) = {
     SHtml.onEvents("onclick")(s => {
-      Data.shiftLeft
-      SetHtml("customer_lines", showLines)
+      import scala.math._
+      range.atomicUpdate( v => { val tmp = max(v._1 - inc, 0); (tmp, min(tmp + inc, currentCustomers.get.length))})
+      SetHtml("customer_lines", showLines) & updateCount 
     })(in)
   }
 
   def shiftRight(in: NodeSeq) = {
+    SHtml.onEvents("onmouseover")(s => {
+        Alert("Test")
+      })(in)
     SHtml.onEvents("onclick")(s => {
-      Data.shiftRight
-      SetHtml("customer_lines", showLines)
+      import scala.math._
+      range.atomicUpdate( v => {
+        if(v._2 == currentCustomers.get.length) v;
+        else {
+           val tmp = min(v._2 + inc, currentCustomers.get.length); 
+          (max(v._1 + inc, tmp - inc), tmp)}})
+      SetHtml("customer_lines", showLines) & updateCount
     })(in)
   }
 
-  def follow(ns : NodeSeq) = {
-    <i>{WiringUI.asText(Data.page)(ns)} / {WiringUI.asText(Data.totalpages)(ns)}</i>
-
-  }
+  def follow = <i>{range._1 / inc + 1} / {customerCount / inc + 1}</i>
 
 
-  def totalCustomers(in: NodeSeq) = Data.total_customers
+  def totalCustomers = ("* *" #> <b>{customerCount}</b>)
 
 
-  def addCustomer(in: NodeSeq) = 
-    <span class="span-4">{SHtml.link("/manage/edit", () => selectedCustomer(Empty), Text("Add a customer"))}</span>
+  def addCustomer(in: NodeSeq) =  <span class="span-4">{SHtml.link("/manage/edit", () => selectedCustomer(Empty), Text("Add a customer"))}</span>
 
 
   def filterCustomers(s: String) : JsCmd = {
-    Data.filter.set(s)
-    SetHtml("customer_lines", showLines)
+    import scala.math._
+    filter.set(s)
+    range atomicUpdate(v => (0, min(customerCount, 5)))
+    SetHtml("customer_lines", showLines) & updateCount
   }
 
   def lookForCustomer(in: NodeSeq) = {
@@ -148,11 +123,9 @@ class Customers extends Logger{
 
   def showLines : NodeSeq = {
 
-    val customers = Data.customers
+    val alternate =  for(i <- List.range(0,getCustomers.length))  yield if(i % 2 == 0) "tr0" else "tr1"
 
-    val alternate =  for(i <- List.range(0,customers.length))  yield if(i % 2 == 0) "tr0" else "tr1"
-
-    for((c, _class) <- customers zip alternate) yield htmlLine(c, _class)
+    for((c, _class) <- getCustomers zip alternate) yield htmlLine(c, _class)
 
   }
 

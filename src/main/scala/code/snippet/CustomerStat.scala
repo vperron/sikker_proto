@@ -20,10 +20,10 @@ class CustomerStats extends Logger {
   import CustomerFieldHelper.toFieldHelper
 
   
-  object graphMode extends SessionVar[Box[Boolean]](Full(true))
-  object lineCount   extends RequestVar[Box[Long]](Full(countCustomers))
-  object currentOffset extends SessionVar[Box[Int]](Full(0))
-  val currentGraph = ValueCell("temperature")
+  object graphMode extends SessionVar[Boolean](true)
+  object lineCount   extends RequestVar[Long](countCustomers)
+  object currentOffset extends SessionVar[Int](0)
+  object currentGraph extends SessionVar[String]("temperature")
   val range         = 5
   val graph_range   = 50
   object currentRange extends SessionVar[Int](1)
@@ -42,13 +42,14 @@ class CustomerStats extends Logger {
   def chooseBox (in: NodeSeq) : NodeSeq = {
     import http.js.JE
 
-    if(graphMode.open_!) {
-      val (name, js) = SHtml.ajaxCall(JE.JsRaw("this.value"), s => SetHtml("graph_area", drawChart(s)))
+    if(graphMode get) {
+      val (name, js) = SHtml.ajaxCall(JE.JsRaw("this.value"), s => {
+          currentGraph.apply(s)
+          SetHtml("graph_area", drawChart(s))
+        })
 
-      val selectValues = List( ("temperature", "Temperature"),
-                                ("cardio", "Cardiology"),
-                                ("accel", "Movements"),
-                                ("noise", "Noise"))
+
+      val selectValues = for(f <- Stats.formFields(Stats)) yield (f.dbColumnName, f.displayName)
 
       (SHtml.select(selectValues, Full(currentGraph get), s => drawChart(s), "onchange" -> js.toJsCmd))
     } else Nil
@@ -59,11 +60,9 @@ class CustomerStats extends Logger {
 
     if ( selectedCustomer isEmpty ) goBack 
 
-    val isGraphMode_? = graphMode.open_!
+    "#graph_area [style]" #> ("width:600px;height:400px;" + (if (!graphMode.get) "display:None;"))
 
-    "#graph_area [style]" #> ("width:600px;height:400px;" + (if (!isGraphMode_?) "display:None;"))
-
-    if ( isGraphMode_? ) drawChart(currentGraph get)
+    if ( graphMode get ) drawChart(currentGraph get)
     else getLines
 
   }
@@ -78,18 +77,24 @@ class CustomerStats extends Logger {
   }
 
   def shiftLeft(in: NodeSeq) : NodeSeq = {
-    if(!graphMode.open_!) SHtml.onEvents("onclick")(s => { toLeft ; SetHtml("customer_stats", showLines) })(in)
-    else <span class="span-4">{SHtml.link("/manage/stats",() => currentRange atomicUpdate(v => if(v > 1)  v - 1 else v), Text("-"))}</span>
+    if(!graphMode.get) SHtml.onEvents("onclick")(s => { toLeft ; SetHtml("customer_stats", showLines) })(in)
+    else SHtml.onEvents("onclick")(s => { 
+          currentRange atomicUpdate(v => if(v > 1)  v - 1 else v)
+          SetHtml("graph_area", drawChart(currentGraph get)) 
+         })(in);
   }
 
   def shiftRight(in: NodeSeq) : NodeSeq = {
-    if(!graphMode.open_!) SHtml.onEvents("onclick")(s => { toRight ; SetHtml("customer_stats", showLines) })(in)
-    else <span class="span-4">{SHtml.link("/manage/stats",() => currentRange atomicUpdate(v => if(v < lineCount.open_!)  v + 1 else v), Text("+"))}</span>
+    if(!graphMode.get) SHtml.onEvents("onclick")(s => { toRight ; SetHtml("customer_stats", showLines) })(in)
+    else SHtml.onEvents("onclick")(s => { 
+          currentRange atomicUpdate(v => if(v < (lineCount.get / graph_range))  v + 1 else v);
+          SetHtml("graph_area", drawChart(currentGraph get)) 
+         })(in);
   }
 
   def follow(ns : NodeSeq) : NodeSeq = {
-    if(!graphMode.open_!)
-      <i>{currentOffset.open_! / range} / {lineCount.open_! / range}</i>
+    if(!graphMode.get)
+      <i>{currentOffset.get / range} / {lineCount.get / range}</i>
     else Nil
   }
 
@@ -104,10 +109,21 @@ class CustomerStats extends Logger {
 
     val data_to_plot = new FlotSerie() {
       override val data = for ((i, stat) <- List.range(0, values.length) zip values) yield (i : Double , stat.fieldByName(s).open_!.get : Double)
-    }
+      //override val data = for (stat <- values) yield (stat.timestamp.get.getTime * 1000 : Double , stat.fieldByName(s).open_!.get : Double)
+
+      override val label = Full(Stats.fieldByName(s).open_!.displayName)
+     }
+
+    val options : FlotOptions = new FlotOptions () {
+      override val xaxis = Full( new FlotAxisOptions() {
+           //override val mode = Full("time")
+      })
+
+   }
+             
 
     Flot.init
-    Flot.render ( "graph_area", List(data_to_plot), new FlotOptions {}, Flot.script(Nil))
+    Flot.render ( "graph_area", List(data_to_plot), options, Flot.script(Nil))
 
   }
 
@@ -120,34 +136,26 @@ class CustomerStats extends Logger {
   */
 
   private def switchMode {
-    val b = graphMode.open_! match  {
-      case true => false
-      case _ => true
-    }
-    graphMode(Full(b))
+    graphMode atomicUpdate(if (_) false else true)
   }
 
 
   private def toLeft = {
     import scala.math._
-    currentOffset(Full(max(currentOffset.open_! - range, 0)))
+    currentOffset atomicUpdate(v => max(v - range, 0))
   }
 
   private def toRight = {
-    import scala.math._
-    val N = lineCount.open_!
-    if(currentOffset.open_! + range < N) {
-      currentOffset(Full(currentOffset.open_! + range))
-    }
+    currentOffset atomicUpdate(v => if (v + range < lineCount.get) v + range else v)
   }
 
   
 
-  private def getModeString = if(!graphMode.open_!) "Graph Mode" else "Raw Mode"
+  private def getModeString = if(!graphMode.get) "Graph Mode" else "Raw Mode"
 
   private def countCustomers = Stats.count(By(Stats.bracelet_id, (selectedCustomer open_!) braceletid))
 
-  private def goBack { debug("Going back..."); S.redirectTo(S.referer openOr "/") }
+  private def goBack { debug("Going back..."); S.redirectTo(S.referer openOr "/manage/") }
 
 
   private def titleLine = {
@@ -167,7 +175,7 @@ class CustomerStats extends Logger {
     val lines = Stats.findAll(By(Stats.bracelet_id, bracelet_id), 
                               OrderBy(Stats.timestamp, Descending), 
                               MaxRows(range),
-                              StartAt(currentOffset.open_!))
+                              StartAt(currentOffset get))
 
     titleLine ++ (for (line <- lines) yield htmlLine(line))
   }

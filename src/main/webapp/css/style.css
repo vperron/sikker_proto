@@ -22,6 +22,9 @@ body {
 	list-style: none;
 }
 
+#legal {
+	text-align: center;
+}
 
 tr.tr0 td {
 	background-color: #e0e0FF;
