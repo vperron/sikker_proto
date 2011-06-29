@@ -79,6 +79,7 @@ object CustomerFieldHelper {
     def lastname : String = obj.field("last_name");
     def category : String = obj.field("info");
     def braceletid : String = obj.field("bracelet_id");
+    def privatekey : String = obj.field("private_key");
 
     def hasString(s : String) : Boolean = {
           (obj.lastname.toLowerCase.indexOf(s) != -1) ||
@@ -105,6 +106,9 @@ object CustomerUtils extends Logger {
     ("informations" ->  
       ("map" -> """function(doc) { if (doc.type == 'Customer') { 
       emit(doc.info, {FirstName: doc.first_name, LastName: doc.last_name, State: doc.info}); } }""" )) ~
+    ("bracelet_keys" ->  
+      ("map" -> """function(doc) { if (doc.type == 'Customer') { 
+      emit(doc.bracelet_id, {CustomerId: doc._id, BraceletId: doc.bracelet_id, Key: doc.private_key}); } }""" )) ~
     ("bracelets"  -> (
       ("map" -> """function(doc) { if (doc.type == 'Customer') { 
         emit(doc.bracelet_id, {CustomerId: doc._id, BraceletId: doc.bracelet_id}); } }""")))))
@@ -156,6 +160,7 @@ class Customer extends CouchRecord[Customer] {
   object last_name extends StringField(this, 200)
   object info extends StringField(this, 200)
   object bracelet_id extends StringField(this, 32) 
+  object private_key extends StringField(this, 64)
 
 }
 

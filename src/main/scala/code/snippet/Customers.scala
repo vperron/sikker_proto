@@ -159,6 +159,7 @@ object EditCustomer extends LiftScreen {
     if(selectedCustomer isEmpty) { 
       val newRecord = Customer.createRecord.first_name(first_name).last_name(last_name).info(info);
       newRecord.bracelet_id(CouchUtils.generate_uuid);
+      newRecord.private_key(randomString(Customer.private_key.maxLen));
       newRecord save;
 
       S.notice("Customer \""+first_name+" "+last_name+"\" has been added successfully.")

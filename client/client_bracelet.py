@@ -18,13 +18,15 @@ import random
 import math
 import sys
 import time
+import hashlib
 
 
 REST_URL    = "localhost:8080"
 REST_PORT   = 8080
-XFER_RATE   = 1/20 # Lines per second
+XFER_RATE   = 10 # Lines per second
 HEADERS     = {"Content-Type" : "application/json"}
-INPUT_FILE  = "jsontxt"
+KEY         = "petitpapanoel" # Dummy key chosen here for all those customers
+                              # Better keys are generated upon customer creation
 
 IDs         = ["f57fa88aa6420869174078e941017b81",
                "f57fa88aa6420869174078e9410168a1",
@@ -38,6 +40,11 @@ IDs         = ["f57fa88aa6420869174078e941017b81",
 def gauss(mean, deviation):
     return int(math.floor(random.gauss(mean,deviation)))
 
+def addCookie(headers, cookie):
+    newHeaders = dict(headers)
+    newHeaders.update({"cookie": cookie})
+    return newHeaders
+
 
 def main():
 
@@ -47,15 +54,33 @@ def main():
 
     random.seed()
 
+
     while True:
         try:
             for _id in IDs:
+
+                # Authentication
+                h.request("GET", "/api/auth/"+_id)
+                answer = h.getresponse()
+                cookie = dict(answer.getheaders())['set-cookie']
+                jsonAnswer = json.loads( "{"+answer.read()+"}" )
+                m = hashlib.sha1()
+                m.update(jsonAnswer["challenge"]+KEY)
+                encrypted = m.hexdigest()
+                encodedJson = {"challenge" : encrypted }
+                h.request("PUT", "/api/auth", json.dumps(encodedJson), addCookie(HEADERS, cookie) )
+                answer = h.getresponse()
+                token = json.loads("{"+answer.read()+"}")['auth_token']
+
+
+
                 data["bracelet_id"] = _id
                 data["temperature"] = gauss(37, 1)
                 data["cardio"]      = gauss(80, 4)
                 data["accel"]       = gauss(5, 1)
                 data["noise"]       = gauss(30, 3)
-                h.request("PUT", "/api/stats", json.dumps(data), HEADERS)
+                data["auth_token"]  = token
+                h.request("PUT", "/api/stats", json.dumps(data), addCookie(HEADERS, cookie))
                 answer = h.getresponse()
                 answer.read()
 

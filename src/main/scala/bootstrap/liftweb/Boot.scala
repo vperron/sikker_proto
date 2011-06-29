@@ -47,7 +47,6 @@ class Boot extends Logger {
 
     // Hook for the webservice
     LiftRules.dispatch.append(REST_Webservice) // stateful -- associated with a servlet container session
-    LiftRules.statelessDispatchTable.append(REST_Webservice)
 
     // Build SiteMap
     val entries = List(
