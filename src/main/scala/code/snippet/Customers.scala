@@ -24,21 +24,18 @@ class Customers extends Logger{
 
   import CustomerFieldHelper.toFieldHelper
 
+  // Number of lines to be shown
   private val inc = 5
 
-  object filter extends SessionVar[String]("")
-  object range extends SessionVar[(Int, Int)]((0,inc))
-  object currentCustomers extends SessionVar[List[Customer]](Customer.all(identity).open_!.toList) 
-
+  private object filter extends SessionVar[String]("")
+  private object range extends SessionVar[(Int, Int)]((0,inc))
+  private object currentCustomers extends SessionVar[List[Customer]](Customer.all(identity).open_!.toList) 
 
   private def updateCount = SetHtml("pagecount", follow) & SetHtml("totalcount", <b>{customerCount}</b>)
 
-  // Caution : maybe the filter won't work anymore
   private def getCustomers : List[Customer] = {
     import scala.math._
-
     val customers = currentCustomers.get.filter ( _.hasString(filter.get.toLowerCase.trim) )
-
     for(i <- List.range(range.get._1, min(range.get._2, customers.length)))  yield customers.apply(i)
   }
 
@@ -47,6 +44,10 @@ class Customers extends Logger{
     currentCustomers.get.filter ( _.hasString(filter.get.toLowerCase.trim) ).length
   }
 
+
+  /* 
+  *  Snippet functions 
+  */
 
   def shiftLeft(in: NodeSeq) = {
     SHtml.onEvents("onclick")(s => {
@@ -57,9 +58,6 @@ class Customers extends Logger{
   }
 
   def shiftRight(in: NodeSeq) = {
-    SHtml.onEvents("onmouseover")(s => {
-        Alert("Test")
-      })(in)
     SHtml.onEvents("onclick")(s => {
       import scala.math._
       range.atomicUpdate( v => {
@@ -73,12 +71,9 @@ class Customers extends Logger{
 
   def follow = <i>{range._1 / inc + 1} / {customerCount / inc + 1}</i>
 
-
   def totalCustomers = ("* *" #> <b>{customerCount}</b>)
 
-
   def addCustomer(in: NodeSeq) =  <span class="span-4">{SHtml.link("/manage/edit", () => selectedCustomer(Empty), Text("Add a customer"))}</span>
-
 
   def filterCustomers(s: String) : JsCmd = {
     import scala.math._
@@ -87,6 +82,7 @@ class Customers extends Logger{
     SetHtml("customer_lines", showLines) & updateCount
   }
 
+  // Creates the textBox that will filter key input events
   def lookForCustomer(in: NodeSeq) = {
     import http.js.JE
     val (name, js) = SHtml.ajaxCall(JE.JsRaw("this.value"), s => filterCustomers(s))
@@ -94,9 +90,8 @@ class Customers extends Logger{
   }
 
 
-  def removeCustomer(cBox : Box[Customer]) : JsCmd  = {
-
-    if (cBox isEmpty) return Noop
+  def removeCustomer(cBox : Box[Customer]) {
+    if (cBox isEmpty) return
 
     val c = cBox open_!
 
@@ -107,7 +102,6 @@ class Customers extends Logger{
       c delete_! ;
       S.notice("Customer "+c.firstname+" "+c.lastname+" has been deleted.") 
     } 
-    Noop
   }
 
 
@@ -122,11 +116,8 @@ class Customers extends Logger{
   }
 
   def showLines : NodeSeq = {
-
     val alternate =  for(i <- List.range(0,getCustomers.length))  yield if(i % 2 == 0) "tr0" else "tr1"
-
     for((c, _class) <- getCustomers zip alternate) yield htmlLine(c, _class)
-
   }
 
 }

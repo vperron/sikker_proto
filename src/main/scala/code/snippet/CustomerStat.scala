@@ -29,6 +29,7 @@ class CustomerStats extends Logger {
   object currentRange extends SessionVar[Int](1)
 
 
+  private def updateCount = SetHtml("pagecount", follow) 
 
 
   def makeTitle (in : NodeSeq) = {
@@ -77,7 +78,7 @@ class CustomerStats extends Logger {
   }
 
   def shiftLeft(in: NodeSeq) : NodeSeq = {
-    if(!graphMode.get) SHtml.onEvents("onclick")(s => { toLeft ; SetHtml("customer_stats", showLines) })(in)
+    if(!graphMode.get) SHtml.onEvents("onclick")(s => { toLeft ; SetHtml("customer_stats", showLines) & updateCount })(in)
     else SHtml.onEvents("onclick")(s => { 
           currentRange atomicUpdate(v => if(v > 1)  v - 1 else v)
           SetHtml("graph_area", drawChart(currentGraph get)) 
@@ -85,14 +86,14 @@ class CustomerStats extends Logger {
   }
 
   def shiftRight(in: NodeSeq) : NodeSeq = {
-    if(!graphMode.get) SHtml.onEvents("onclick")(s => { toRight ; SetHtml("customer_stats", showLines) })(in)
+    if(!graphMode.get) SHtml.onEvents("onclick")(s => { toRight ; SetHtml("customer_stats", showLines) & updateCount })(in)
     else SHtml.onEvents("onclick")(s => { 
           currentRange atomicUpdate(v => if(v < (lineCount.get / graph_range))  v + 1 else v);
           SetHtml("graph_area", drawChart(currentGraph get)) 
          })(in);
   }
 
-  def follow(ns : NodeSeq) : NodeSeq = {
+  def follow : NodeSeq = {
     if(!graphMode.get)
       <i>{currentOffset.get / range} / {lineCount.get / range}</i>
     else Nil

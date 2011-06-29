@@ -13,6 +13,7 @@ class Stats extends KeyedMapper[Long, Stats] with Logger {
 
   def primaryKeyField = id 
 
+  // Implicit to generate well-typed errors from a  simple String.
   trait GenerateFieldError {
      self: FieldIdentifier =>
      implicit def strToListFieldError(msg: String): List[FieldError] =
@@ -21,11 +22,8 @@ class Stats extends KeyedMapper[Long, Stats] with Logger {
 
 
   def checkBraceletExists(s : String) : Boolean = {
-
     val (http, db) = CustomerUtils.init
-
-    val bracelet = ((http(db design(CustomerUtils.db_designName) view("bracelets") key(JString(s)) query)).open_! rows) toList
-
+    val bracelet = ((http(db design(CustomerUtils.db_designName) view("bracelets") key(JString(s)) query)).open_! rows) toList;
     if(bracelet.size != 0) true else false
   }
 
@@ -45,7 +43,7 @@ class Stats extends KeyedMapper[Long, Stats] with Logger {
     override def required_? = true
     override def dbNotNull_? = true
     override def dbDisplay_? = false
-    override def validate = if (checkBraceletExists(get)) Nil ; else "Verification of element "+dbColumnName+" failed."
+    override def validate = if (checkBraceletExists(get)) Nil ; else dbColumnName+" : Failed parsing"
   }
 
   object timestamp extends MappedDateTime(this) {
@@ -64,7 +62,7 @@ class Stats extends KeyedMapper[Long, Stats] with Logger {
     override def required_? = true
     override def dbNotNull_? = true
     override def defaultValue = -1.0 // Allegedly false
-    override def validate = if (get > 60 || get < 20) "Verification of element "+dbColumnName+" failed." else Nil
+    override def validate = if (get > 60 || get < 20) dbColumnName+" : Failed parsing" else Nil
     override def displayName = "Skin Temperature"
   }
   object cardio extends MappedDouble(this) with GenerateFieldError{
@@ -73,7 +71,7 @@ class Stats extends KeyedMapper[Long, Stats] with Logger {
     override def required_? = true
     override def dbNotNull_? = true
     override def defaultValue = -1.0 // Allegedly false
-    override def validate = if (get > 150 || get < 20) "Verification of element "+dbColumnName+" failed." else Nil
+    override def validate = if (get > 150 || get < 20)  dbColumnName+" : Failed parsing" else Nil
     override def displayName = "Cardiac Pulse"
   }
   object accel extends MappedDouble(this) with GenerateFieldError{
@@ -82,7 +80,7 @@ class Stats extends KeyedMapper[Long, Stats] with Logger {
     override def required_? = true
     override def dbNotNull_? = true
     override def defaultValue = -1.0 // Allegedly false
-    override def validate = if (get > 10 || get < 0) "Verification of element "+dbColumnName+" failed." else Nil
+    override def validate = if (get > 10 || get < 0)  dbColumnName+" : Failed parsing" else Nil
     override def displayName = "Movement index"
   }
   object noise extends MappedDouble(this) with GenerateFieldError{
@@ -91,7 +89,7 @@ class Stats extends KeyedMapper[Long, Stats] with Logger {
     override def required_? = true
     override def dbNotNull_? = true
     override def defaultValue = -1.0 // Allegedly false
-    override def validate = if (get > 100 || get < 0) "Verification of element "+dbColumnName+" failed." else Nil
+    override def validate = if (get > 100 || get < 0)  dbColumnName+" : Failed parsing" else Nil
     override def displayName = "Volume of noise"
   }
 

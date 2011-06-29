@@ -33,7 +33,6 @@ object Uuids extends Uuids with CouchMetaRecord[Uuids]
 
 object CouchUtils extends Logger {
 
-
   def algorithm = {
     val Full(uuid) = CouchDBConfig.fetchFrom(new Database("_config"), "uuids")
     uuid.algorithm.get
@@ -64,7 +63,7 @@ object CouchUtils extends Logger {
 }
 
 
-// Just a helper class to help me get the fields I need
+// Helper class that provides some handy functions (extended into Customer class)
 object CustomerFieldHelper {
   import couchdb._
   import DocumentHelpers.jobjectToJObjectExtension
@@ -111,6 +110,10 @@ object CustomerUtils extends Logger {
         emit(doc.bracelet_id, {CustomerId: doc._id, BraceletId: doc.bracelet_id}); } }""")))))
 
 
+  /*
+   * Returns http and db objects needed to access most of couchDB features (queries...)
+   * It also updates the design it told to do so.
+  */
   def init(update_? : Boolean = false) : (Http, Database) = {
     val (http, db) = CouchUtils.setup(db_name)
     if(update_?) {
@@ -138,17 +141,11 @@ object CustomerUtils extends Logger {
     }
   }
 
+  // Unused, but could be of some help
   def pretty_print(c : Customer) = Printer.pretty(render(stripIdAndRev(c asJValue)))
 
 }
 
-
-
-/*
-Each Customer has several properties, and is associated with
-a list of the Bracelets he possesses.
-The exact list of properties can be determined later.
-*/
 
 
 
