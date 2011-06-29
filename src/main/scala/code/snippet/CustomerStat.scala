@@ -95,7 +95,7 @@ class CustomerStats extends Logger {
 
   def follow : NodeSeq = {
     if(!graphMode.get)
-      <i>{currentOffset.get / range} / {lineCount.get / range}</i>
+      <i>{currentOffset.get / range + 1} / {lineCount.get / range + 1}</i>
     else Nil
   }
 
@@ -109,15 +109,15 @@ class CustomerStats extends Logger {
                               MaxRows(currentRange.get * graph_range))
 
     val data_to_plot = new FlotSerie() {
-      override val data = for ((i, stat) <- List.range(0, values.length) zip values) yield (i : Double , stat.fieldByName(s).open_!.get : Double)
-      //override val data = for (stat <- values) yield (stat.timestamp.get.getTime * 1000 : Double , stat.fieldByName(s).open_!.get : Double)
+      //override val data = for ((i, stat) <- List.range(0, values.length) zip values) yield (i : Double , stat.fieldByName(s).open_!.get : Double)
+      override val data = for (stat <- values) yield (stat.timestamp.get.getTime : Double , stat.fieldByName(s).open_!.get : Double)
 
       override val label = Full(Stats.fieldByName(s).open_!.displayName)
      }
 
     val options : FlotOptions = new FlotOptions () {
       override val xaxis = Full( new FlotAxisOptions() {
-           //override val mode = Full("time")
+           override val mode = Full("time")
       })
 
    }

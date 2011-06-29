@@ -148,6 +148,8 @@ object CustomerUtils extends Logger {
   // Unused, but could be of some help
   def pretty_print(c : Customer) = Printer.pretty(render(stripIdAndRev(c asJValue)))
 
+  def reloadCustomers : List[Customer] = Customer.all(identity).open_!.toList
+
 }
 
 

@@ -69,7 +69,8 @@ object REST_Webservice extends RestHelper with Logger {
           case e : SQLException => {error(e) ; return genError("Database exception : Malformed request.") }
           case e => return genError("Unknown exception occured.")
         }
-        return stat.asJs;   
+        // Return correct time from server
+        return JField("current_time",JInt((new java.util.Date).getTime))
       }
       case Failure(msg, _, _) => genError(msg)
       case _ => genError("Unexpected parsing error.")

@@ -23,7 +23,8 @@ import hashlib
 
 REST_URL    = "localhost:8080"
 REST_PORT   = 8080
-XFER_RATE   = 10 # Lines per second
+TIME_INCREMENT = 10*60 # Ten minutes
+XFER_RATE   = 1/20 # Lines per second
 HEADERS     = {"Content-Type" : "application/json"}
 KEY         = "petitpapanoel" # Dummy key chosen here for all those customers
                               # Better keys are generated upon customer creation
@@ -54,6 +55,8 @@ def main():
 
     random.seed()
 
+    now = int(math.floor(time.time()))
+    
 
     while True:
         try:
@@ -71,10 +74,16 @@ def main():
                 h.request("PUT", "/api/auth", json.dumps(encodedJson), addCookie(HEADERS, cookie) )
                 answer = h.getresponse()
                 token = json.loads("{"+answer.read()+"}")['auth_token']
-
+                    
+                """ Was a check, only to try if token recognition was also working as GET
+                h.request("GET", "/api/stats/"+token+"/"+_id,headers=addCookie(HEADERS, cookie))
+                answer = h.getresponse()
+                print(answer.read())
+                """
 
 
                 data["bracelet_id"] = _id
+                data["timestamp"]   = now*1000
                 data["temperature"] = gauss(37, 1)
                 data["cardio"]      = gauss(80, 4)
                 data["accel"]       = gauss(5, 1)
@@ -82,9 +91,12 @@ def main():
                 data["auth_token"]  = token
                 h.request("PUT", "/api/stats", json.dumps(data), addCookie(HEADERS, cookie))
                 answer = h.getresponse()
-                answer.read()
+                # This answer now contains current date from the server
+                # print(answer.read())
+                
 
-
+            
+            now -= TIME_INCREMENT
             sys.stdout.write(".")
             sys.stdout.flush()
             time.sleep(XFER_RATE)

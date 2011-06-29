@@ -17,8 +17,9 @@ import scala.xml.{NodeSeq, Text}
 import json._
 
 
-// RequestVar to retain selected user for the edition form
+// SessionVar to retain selected user for the edition form
 object selectedCustomer extends SessionVar[Box[Customer]](Empty)
+object currentCustomers extends SessionVar[List[Customer]](CustomerUtils.reloadCustomers) 
 
 class Customers extends Logger{
 
@@ -29,9 +30,10 @@ class Customers extends Logger{
 
   private object filter extends SessionVar[String]("")
   private object range extends SessionVar[(Int, Int)]((0,inc))
-  private object currentCustomers extends SessionVar[List[Customer]](Customer.all(identity).open_!.toList) 
 
   private def updateCount = SetHtml("pagecount", follow) & SetHtml("totalcount", <b>{customerCount}</b>)
+
+
 
   private def getCustomers : List[Customer] = {
     import scala.math._
@@ -100,6 +102,7 @@ class Customers extends Logger{
       
       Stats.bulkDelete_!!(By(Stats.bracelet_id,c braceletid))
       c delete_! ;
+      currentCustomers.set(CustomerUtils.reloadCustomers)
       S.notice("Customer "+c.firstname+" "+c.lastname+" has been deleted.") 
     } 
   }
@@ -161,6 +164,8 @@ object EditCustomer extends LiftScreen {
       newRecord.bracelet_id(CouchUtils.generate_uuid);
       newRecord.private_key(randomString(Customer.private_key.maxLen));
       newRecord save;
+      currentCustomers.set(CustomerUtils.reloadCustomers)
+  
 
       S.notice("Customer \""+first_name+" "+last_name+"\" has been added successfully.")
     } else {
