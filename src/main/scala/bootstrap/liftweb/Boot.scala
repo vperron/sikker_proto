@@ -12,6 +12,8 @@ import mapper._
 
 import net.liftweb.couchdb.{CouchDB, Database, DatabaseInfo}
 import dispatch.{Http, StatusCode}
+import net.liftweb.http.ResourceServer
+import net.liftweb.http.auth.{HttpBasicAuthentication,AuthRole,userRoles}
 
 import code.api._
 
@@ -37,6 +39,12 @@ class Boot extends Logger {
       DB.defineConnectionManager(DefaultConnectionIdentifier, vendor)
     }
 
+    /* Crosshair plugin suffers from an execution bug on line 155, which I did not succeed in fixing 
+    ResourceServer.allow({
+      case "flot" :: "jquery.flot.crosshair.js" :: Nil => true
+    })
+    */
+
     // Use Lift's Mapper ORM to populate the database
     // you don't need to use Mapper to use Lift... use
     // any ORM you want
@@ -48,10 +56,22 @@ class Boot extends Logger {
     // Hook for the webservice
     LiftRules.dispatch.append(REST_Webservice) // stateful -- associated with a servlet container session
 
+    LiftRules.authentication = HttpBasicAuthentication("management_area"){
+      // Basic authentication yet, but uses CouchDB documents.
+      case (login, pwd, req) => {
+        val admin = Admin.fetch(login)
+        if(admin isEmpty) return false
+        if(admin.open_!.password.get == pwd){
+          userRoles(AuthRole("admin")); true
+        } else false
+      }
+    }
+ 
+
     // Build SiteMap
     val entries = List(
       Menu.i("Index") / "index",
-      Menu.i("Manage") / "manage" / "index",
+      Menu.i("Manage") / "manage" / "index" >> HttpAuthProtected(req => Full(AuthRole("admin"))),
         Menu.i("Edit Customer") / "manage" / "edit" >> Hidden,
         Menu.i("Customer Stats") / "manage" / "stats" >> Hidden,
       Menu.i("About") / "about")

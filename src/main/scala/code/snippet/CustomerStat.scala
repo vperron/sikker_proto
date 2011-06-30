@@ -116,6 +116,8 @@ class CustomerStats extends Logger {
      }
 
     val options : FlotOptions = new FlotOptions () {
+      //val crosshair = Full(Map("mode" -> "xy"))
+
       override val xaxis = Full( new FlotAxisOptions() {
            override val mode = Full("time")
       })

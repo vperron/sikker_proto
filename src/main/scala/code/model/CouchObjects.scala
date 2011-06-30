@@ -171,3 +171,13 @@ object Customer extends Customer with CouchMetaRecord[Customer]
 
 
 
+class Admin extends CouchRecord[Admin] {
+  def meta = Admin
+
+  object password extends StringField(this, 200)
+
+}
+
+object Admin extends Admin with CouchMetaRecord[Admin] 
+
+

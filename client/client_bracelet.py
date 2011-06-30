@@ -92,7 +92,7 @@ def main():
                 h.request("PUT", "/api/stats", json.dumps(data), addCookie(HEADERS, cookie))
                 answer = h.getresponse()
                 # This answer now contains current date from the server
-                # print(answer.read())
+                answer.read()
                 
 
             
