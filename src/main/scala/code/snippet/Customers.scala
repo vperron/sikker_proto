@@ -197,7 +197,6 @@ object EditCustomer extends LiftScreen {
       newRecord.private_key(randomString(Customer.private_key.maxLen));
       newRecord save;
       currentCustomers.set(CustomerUtils.reloadCustomers)
-      range.set((0,inc))
   
 
       S.notice("Customer \""+first_name+" "+last_name+"\" has been added successfully.")
