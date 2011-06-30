@@ -109,7 +109,6 @@ class CustomerStats extends Logger {
                               MaxRows(currentRange.get * graph_range))
 
     val data_to_plot = new FlotSerie() {
-      //override val data = for ((i, stat) <- List.range(0, values.length) zip values) yield (i : Double , stat.fieldByName(s).open_!.get : Double)
       override val data = for (stat <- values) yield (stat.timestamp.get.getTime : Double , stat.fieldByName(s).open_!.get : Double)
 
       override val label = Full(Stats.fieldByName(s).open_!.displayName)

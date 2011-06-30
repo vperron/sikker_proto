@@ -18,7 +18,7 @@ import net.liftweb.http.auth.{HttpBasicAuthentication,AuthRole,userRoles}
 import code.api._
 
 import code.model._
-
+import code.snippet.LoggedIn
 
 /**
 * A class that's instantiated early and run.  It allows the application
@@ -56,28 +56,25 @@ class Boot extends Logger {
     // Hook for the webservice
     LiftRules.dispatch.append(REST_Webservice) // stateful -- associated with a servlet container session
 
-    LiftRules.authentication = HttpBasicAuthentication("management_area"){
-      // Basic authentication yet, but uses CouchDB documents.
-      case (login, pwd, req) => {
-        val admin = Admin.fetch(login)
-        if(admin isEmpty) return false
-        if(admin.open_!.password.get == pwd){
-          userRoles(AuthRole("admin")); true
-        } else false
-      }
-    }
+
+    // Rule that handles authentication for us
+    LiftRules.dispatch.prepend(NamedPF("Management Access") {
+      case Req("manage" :: page, "", _) if !LoggedIn.is && page.head != "login" =>
+        () => Full(RedirectResponse("/manage/login"))
+    })
  
 
     // Build SiteMap
     val entries = List(
       Menu.i("Index") / "index",
-      Menu.i("Manage") / "manage" / "index" >> HttpAuthProtected(req => Full(AuthRole("admin"))),
+      Menu.i("Manage") / "manage" / "index" submenus(
         Menu.i("Edit Customer") / "manage" / "edit" >> Hidden,
-        Menu.i("Customer Stats") / "manage" / "stats" >> Hidden,
+        Menu.i("Login") / "manage" / "login" >> Hidden,
+        Menu.i("Customer Stats") / "manage" / "stats" >> Hidden),
       Menu.i("About") / "about")
 
-    // set the sitemap.  Note if you don't want access control for
-    // each page, just comment this line out.
+    SiteMap.enforceUniqueLinks = false;
+
     LiftRules.setSiteMap(SiteMap(entries:_*))
 
     // Use jQuery 1.4

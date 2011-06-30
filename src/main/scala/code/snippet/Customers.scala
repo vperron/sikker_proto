@@ -21,6 +21,8 @@ import json._
 object selectedCustomer extends SessionVar[Box[Customer]](Empty)
 object currentCustomers extends SessionVar[List[Customer]](CustomerUtils.reloadCustomers) 
 
+object LoggedIn extends SessionVar(false)
+
 class Customers extends Logger{
 
   import CustomerFieldHelper.toFieldHelper
@@ -123,6 +125,36 @@ class Customers extends Logger{
     for((c, _class) <- getCustomers zip alternate) yield htmlLine(c, _class)
   }
 
+  def logout = SHtml.link("/index", () => LoggedIn.set(false), Text("Sign out")) 
+
+}
+
+object LoginScreen extends LiftScreen with Logger {
+  import CustomerFieldHelper.toFieldHelper
+  
+
+  override def screenTop = {
+    <b>Please log in in order to access this zone.</b>
+  }
+
+  val login = new Field with StringField {
+      def name = "Login"
+
+      override def default = "";
+      override def validations = valMinLen(1, "Too Short") _ ::
+          valMaxLen(40, "Too Long") _ :: super.validations
+  }
+
+  val pwd = password("Password","",valMinLen(1,"Too Short"))
+
+  def finish() {
+    val admin = Admin.fetch(login);
+    if(admin.isEmpty) return;
+    if(admin.open_!.password.get.asInstanceOf[String] == pwd.get)  LoggedIn.set(true)
+
+    S.redirectTo("/manage/")
+    
+  }
 }
 
 object EditCustomer extends LiftScreen {
@@ -165,6 +197,7 @@ object EditCustomer extends LiftScreen {
       newRecord.private_key(randomString(Customer.private_key.maxLen));
       newRecord save;
       currentCustomers.set(CustomerUtils.reloadCustomers)
+      range.set((0,inc))
   
 
       S.notice("Customer \""+first_name+" "+last_name+"\" has been added successfully.")
